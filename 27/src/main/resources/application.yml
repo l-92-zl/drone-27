@@ -1,23 +1,24 @@
 server:
   port: 8080
 
-spring:
-  datasource:
-    url: jdbc:mysql://localhost:3306/drone_detect?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-    username: root
-    password: 123
-    driver-class-name: com.mysql.cj.jdbc.Driver
+# spring:
+#   datasource:
+#     url: jdbc:mysql://localhost:3306/drone_detect?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+#     username: root
+#     password: 123
+#     driver-class-name: com.mysql.cj.jdbc.Driver
   
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: false
+  # jpa:
+  #   hibernate:
+  #     ddl-auto: update
+  #   show-sql: false
   
-  data:
-    redis:
-      host: localhost
-      port: 6379
+  # data:
+  #   redis:
+  #     host: localhost
+  #     port: 6379
 
 # 自定义配置
-algo:
-  callback-secret: "super_secret_token_123"
+# 前端算法安全令牌 
+# algo:
+#   callback-secret: "super_secret_token_123"
