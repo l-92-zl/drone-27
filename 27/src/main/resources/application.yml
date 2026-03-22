@@ -1,6 +1,22 @@
 server:
   port: 8080
 
+
+  # 接口
+# 1. 前端 ↔ Java 后端 接口
+
+# POST（上传）	http://{后端IP}:{端口}/api/upload	前端上传视频帧到后端	
+# WebSocket（推送）	ws://{后端IP}:{端口}/ws/{taskId}	后端实时推送算法处理结果给前端	
+# GET（下载）	http://{后端IP}:{端口}/api/download/{taskId}	前端下载带标注的处理后图片	
+# GET（健康检查）	http://{后端IP}:{端口}/api/health	
+
+# 2. Java 后端 ↔ Python 算法 接口
+# POST（推送）	http://{PythonIP}:{端口}/process	Java 异步推送视频帧给 Python 算法处理	
+# POST（回调）	http://{后端IP}:{端口}/api/callback	Python 将处理结果推回 Java	
+
+
+
+
 # spring:
 #   datasource:
 #     url: jdbc:mysql://localhost:3306/drone_detect?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
