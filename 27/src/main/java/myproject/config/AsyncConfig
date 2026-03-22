@@ -1,0 +1,38 @@
+package myproject.config;
+
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.AsyncConfigurer;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+
+import java.util.concurrent.Executor;
+import java.util.concurrent.ThreadPoolExecutor;
+@Configuration
+@EnableAsync
+// 1. 关键：开启异步支持
+public class AsyncConfig implements AsyncConfigurer {
+
+    @Override
+    public Executor getAsyncExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        // 2. 核心线程数：通常设置为 CPU 核数 或 CPU*2
+        // 如果是IO密集型任务（如调用HTTP接口），可以设大一点，比如 10-20
+        executor.setCorePoolSize(20);
+        // 3. 最大线程数：高峰期允许创建的最大线程数
+        executor.setMaxPoolSize(50);
+        // 4. 队列容量：当核心线程都在忙时，任务先排队。
+        // 设为 100 意味着最多积压 100 个任务，超过则触发拒绝策略
+        executor.setQueueCapacity(100); // 队列不要太大，避免内存溢出
+
+        executor.setThreadNamePrefix("async-dispatch-");
+
+        // 使用 DiscardPolicy。
+        // 理由：如果是实时视频流，处理不过来就丢弃当前帧，保证系统不卡顿。
+        // 绝对不能用 CallerRunsPolicy，否则主线程会被阻塞，导致所有用户无法上传。
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy());
+
+        executor.initialize();
+        return executor;
+    }
+}
