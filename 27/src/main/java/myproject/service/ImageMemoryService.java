@@ -1,34 +1,37 @@
 package myproject.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
+import myproject.controller.DetectionResult;
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.stereotype.Service;
 
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.ArrayList;
-import java.util.List;
 
 @Service
 @Slf4j
 public class ImageMemoryService implements DisposableBean {
-    // 【关键修改】过期时间调整为 60 秒 (60000ms)
-    // 理由：防止因算法耗时波动或网络抖动导致数据在回调前被清理
-    private static final long EXPIRE_TIME_MS = 60000L;
-    // 配置：数据保留时间 (60秒)，清理间隔 (5秒)
-    private static final long CLEANUP_INTERVAL_MS = 5000L;
 
-    // 存储原始图片帧: TaskID -> Byte[]
+    // 引入 ObjectMapper 用于自动转换对象为 JSON
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    private static final long EXPIRE_TIME_MS = 60000L; // 60秒过期
+    private static final long CLEANUP_INTERVAL_MS = 5000L; // 5秒清理一次
+
+    // 存储原始图片帧
     private final Map<String, byte[]> rawFrameStore = new ConcurrentHashMap<>();
-    // 存储处理后的结果图片 (带框): TaskID -> Byte[]
+    // 存储处理后的结果图片
     private final Map<String, byte[]> processedFrameStore = new ConcurrentHashMap<>();
-    // 存储结构化检测结果: TaskID -> JSON String
+    // 存储结构化检测结果 (存 JSON 字符串)
     private final Map<String, String> detectionResultStore = new ConcurrentHashMap<>();
-
-    // 关键：记录最后活跃时间，用于清理
+    // 记录最后活跃时间
     private final Map<String, Long> timestampStore = new ConcurrentHashMap<>();
 
     private final ScheduledExecutorService cleaner = Executors.newSingleThreadScheduledExecutor(r -> {
@@ -47,18 +50,31 @@ public class ImageMemoryService implements DisposableBean {
         rawFrameStore.put(taskId, imageData);
         updateTimestamp(taskId);
     }
-//    //展示图片给前端
-//    public byte[] getRawFrame(String taskId) {
-//        updateTimestamp(taskId);
-//        return rawFrameStore.get(taskId);
-//    }
 
-    public void saveProcessingResult(String taskId, byte[] annotatedImage, String jsonResult) {
+    /**
+     * 【关键修改】
+     * 接收 DetectionResult 对象，而不是 String。
+     * Service 内部负责将其转换为 JSON 存储。
+     */
+    public void saveProcessingResult(String taskId, byte[] annotatedImage, DetectionResult resultData) {
         if (taskId == null) return;
-        if (annotatedImage != null) processedFrameStore.put(taskId, annotatedImage);
-        if (jsonResult != null) detectionResultStore.put(taskId, jsonResult);
+
+        // 1. 保存图片
+        if (annotatedImage != null) {
+            processedFrameStore.put(taskId, annotatedImage);
+        }
+
+        // 2. 保存结果 (自动转为 JSON)
+        if (resultData != null) {
+            try {
+                String jsonResult = objectMapper.writeValueAsString(resultData);
+                detectionResultStore.put(taskId, jsonResult);
+                log.debug("✅ 结果已序列化存储: {}", taskId);
+            } catch (JsonProcessingException e) {
+                log.error("❌ JSON 序列化失败: {}", taskId, e);
+            }
+        }
         updateTimestamp(taskId);
-        log.debug("✅ 结果已存: {}", taskId);
     }
 
     public String getJsonResult(String taskId) {
@@ -72,13 +88,9 @@ public class ImageMemoryService implements DisposableBean {
     }
 
     private void updateTimestamp(String taskId) {
-        if (taskId != null)
-            timestampStore.put(taskId, System.currentTimeMillis());
+        if (taskId != null) timestampStore.put(taskId, System.currentTimeMillis());
     }
 
-    /**
-     * 真正的清理逻辑：删除超过 EXPIRE_TIME_MS 未更新的数据
-     */
     private void cleanupExpiredData() {
         long now = System.currentTimeMillis();
         List<String> expiredIds = new ArrayList<>();
@@ -111,5 +123,4 @@ public class ImageMemoryService implements DisposableBean {
         try { if (!cleaner.awaitTermination(5, TimeUnit.SECONDS)) cleaner.shutdownNow(); }
         catch (InterruptedException e) { cleaner.shutdownNow(); }
     }
-
 }
