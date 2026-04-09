@@ -1,11 +1,12 @@
 server:
   port: 8080
+  address: 0.0.0.0
 
 app:
   algorithm:
     # 开发环境 异步告诉算法启动
     url: http://localhost:8000/process
-   
+
   # 接口
 # 1. 前端 ↔ Java 后端 接口
 
