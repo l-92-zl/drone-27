@@ -1,0 +1,21 @@
+package myproject.config;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+@Configuration
+public class CorsConfig implements WebMvcConfigurer {
+
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/**") // 匹配所有接口路径
+                // 【安全提示】生产环境建议将 "*" 替换为具体的前端域名
+                // 例如 .allowedOriginPatterns("https://your-frontend.com")
+                .allowedOriginPatterns("*")
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // 允许的请求方法
+                .allowedHeaders("*") // 允许所有请求头
+                .allowCredentials(true) // 允许携带Cookie等凭证
+                .maxAge(3600); // 预检请求的缓存时间（秒）
+    }
+}
