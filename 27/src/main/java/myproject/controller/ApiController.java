@@ -25,7 +25,7 @@ public class ApiController {
     private final ResultHandler resultHandler;
     private final AlgorithmDispatchService dispatchService;
     // 2. 注入 Spring 提供的 ObjectMapper (单例，性能更好) // 用于推送给前端时序列化
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
     /**
      * 1. 视频帧上传接口
      */
