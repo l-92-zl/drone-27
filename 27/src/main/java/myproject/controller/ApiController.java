@@ -7,6 +7,7 @@ import myproject.handle.ResultHandler;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,7 +17,6 @@ import java.util.Base64;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "*")
 @Slf4j
 @RequiredArgsConstructor
 public class ApiController {
@@ -25,7 +25,8 @@ public class ApiController {
     private final ResultHandler resultHandler;
     private final AlgorithmDispatchService dispatchService;
     // 2. 注入 Spring 提供的 ObjectMapper (单例，性能更好) // 用于推送给前端时序列化
-    private final ObjectMapper objectMapper;
+    @Autowired
+    private final ObjectMapper objectMapper ;
     /**
      * 1. 视频帧上传接口
      */
