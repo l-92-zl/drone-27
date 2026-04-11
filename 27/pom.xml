@@ -47,6 +47,11 @@
             <scope>provided</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.openpnp</groupId>
+            <artifactId>opencv</artifactId>
+            <version>4.5.1-2</version> <!-- 或者使用更新版本 -->
+        </dependency>
         <!-- 测试依赖（可选，保留不影响运行） -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
