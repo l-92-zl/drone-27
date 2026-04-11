@@ -1,0 +1,111 @@
+package myproject.service;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import myproject.controller.DetectionResult;
+import myproject.handle.ResultHandler;
+import org.springframework.stereotype.Service;
+
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
+@Service
+public class MockAlgorithmService {
+
+    private final ResultHandler resultHandler;
+    private final ImageMemoryService memoryService;
+    private final Random random = new Random();
+    // 注入 ObjectMapper 用于将对象转为 JSON 字符串
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    public MockAlgorithmService(ResultHandler resultHandler, ImageMemoryService memoryService) {
+        this.resultHandler = resultHandler;
+        this.memoryService = memoryService;
+    }
+
+    /**
+     * 模拟调用 Python 算法
+     */
+    public void processMockData(String taskId) {
+        try {
+            // 1. 模拟算法处理延迟
+            Thread.sleep(1000); // 增加一点延迟模拟真实感
+
+            int width = 640;
+            int height = 480;
+
+            // 2. 生成假图片 (绿色背景)
+            byte[] fakeImageBytes = generateGreenImage(width, height);
+
+            // --- 3. 构造符合 DetectionResult 结构的数据 ---
+            DetectionResult result = new DetectionResult();
+            result.setFrameId(random.nextInt(10000));
+            result.setTimestamp(System.currentTimeMillis());
+            result.setWidth(width);
+            result.setHeight(height);
+
+            // 模拟生成 2 个目标
+            List<DetectionResult.TargetObject> objects = new ArrayList<>();
+
+            // 目标 1: 人
+            DetectionResult.TargetObject person = new DetectionResult.TargetObject();
+            person.setLabel("Person"); // 对应前端的 category
+            person.setConfidence(0.98);
+            person.setX(100);
+            person.setY(100);
+            person.setW(150);
+            person.setH(300);
+            objects.add(person);
+
+            // 目标 2: 车
+            DetectionResult.TargetObject car = new DetectionResult.TargetObject();
+            car.setLabel("Car");
+            car.setConfidence(0.85);
+            car.setX(300);
+            car.setY(200);
+            car.setW(200);
+            car.setH(100);
+            objects.add(car);
+
+            result.setObjects(objects);
+
+            // 4. 将对象序列化为 JSON 字符串
+            String jsonResult = objectMapper.writeValueAsString(result);
+
+            // 5. 保存图片到内存 (供下载接口使用)
+            memoryService.saveProcessingResult(taskId, fakeImageBytes, result);
+
+            // 6. 推送 JSON 数据给前端
+            resultHandler.broadcastResult(taskId, jsonResult);
+
+            System.out.println("⚡️ [Mock Service] 模拟数据已发送: " + jsonResult);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // ---------------- 辅助方法 ----------------
+
+    private byte[] generateGreenImage(int w, int h) throws Exception {
+        BufferedImage image = new BufferedImage(w, h, BufferedImage.TYPE_3BYTE_BGR);
+        Graphics2D g = image.createGraphics();
+
+        // 背景色
+        g.setColor(new Color(34, 139, 34));
+        g.fillRect(0, 0, w, h);
+
+        // 绘制文字提示
+        g.setColor(Color.WHITE);
+        g.setFont(new Font("Arial", Font.BOLD, 24));
+        g.drawString("MOCK ALGORITHM MODE", 50, h / 2);
+        g.dispose();
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ImageIO.write(image, "jpg", baos);
+        return baos.toByteArray();
+    }
+}
