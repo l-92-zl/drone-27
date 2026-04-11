@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Base64;
+import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api")
@@ -31,24 +33,32 @@ public class ApiController {
      * 1. 视频帧上传接口
      */
     @PostMapping("/upload")
-    public ResponseEntity<String> uploadFrame(
-            @RequestParam("file") MultipartFile file,
-            @RequestParam("taskId") String taskId) {
+    public ResponseEntity<Map<String, String>> uploadFrame( // 1. 修改返回泛型
+                                                            @RequestParam("file") MultipartFile file) { // 2. 移除 @RequestParam("taskId")
+
 
         if (file.isEmpty()) {
-            return ResponseEntity.badRequest().body("Empty File");
+            return ResponseEntity.badRequest().body(Map.of("error", "Empty File"));
         }
 
         try {
+
+            String taskId = UUID.randomUUID().toString();
+
             byte[] imageData = file.getBytes();
             memoryService.saveRawFrame(taskId, imageData);
             dispatchService.dispatchToPython(taskId, imageData);
-            return ResponseEntity.ok("UPLOADED");
+
+            // 4. 核心改动：返回 JSON 格式，包含前端需要的 taskId
+            // 前端代码在等: response.data.taskId
+            return ResponseEntity.ok(Map.of("taskId", taskId));
+
         } catch (Exception e) {
             log.error("Upload failed", e);
-            return ResponseEntity.internalServerError().body("ERROR");
+            return ResponseEntity.internalServerError().body(Map.of("error", "ERROR"));
         }
     }
+
 
     /**
      * 内部静态类：接收 Python 回调的包装对象
