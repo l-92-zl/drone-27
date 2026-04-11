@@ -1,5 +1,6 @@
 package myproject.controller;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import java.util.List;
 
@@ -13,8 +14,31 @@ public class DetectionResult {
 
     @Data
     public static class TargetObject {
-        private String label;      // 类别 "person", "car"
-        private double confidence; // 置信度
-        private int[] bbox; // [x, y, w, h]
+
+        // 保持 "category" 字段名，方便前端识别
+        @JsonProperty("category")
+        private String label;
+
+        @JsonProperty("confidence")
+        private double confidence;
+
+        // 这样前端可以直接用 det.x, det.y
+        private int x;
+        private int y;
+        private int w;
+        private int h;
+
+        /**
+         * 模拟兼容数组的方法
+         * 如果后端算法返回的是 int[]{x, y, w, h}，调用此方法自动赋值
+         */
+        public void setBbox(int[] bbox) {
+            if (bbox != null && bbox.length >= 4) {
+                this.x = bbox[0];
+                this.y = bbox[1];
+                this.w = bbox[2];
+                this.h = bbox[3];
+            }
+        }
     }
 }
